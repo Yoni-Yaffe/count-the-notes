@@ -1,62 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta name="description" content="Count the Notes: Histogram-Based Supervision for Automatic Music Transcription">
+  <meta name="keywords" content="AMT, Music Transcription, Histogram Supervision">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Count the Notes</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-  <style>
-    .video-container { margin-bottom: 2rem; }
-    iframe, video { width: 100%; height: 120px; }
-    .publication-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1rem; }
-  </style>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
 </head>
 <body>
-  <section class="section">
-    <div class="container has-text-centered">
-      <h1 class="title is-2">Count the Notes: Histogram-Based Supervision for AMT</h1>
-      <p>
-        <strong>Jonathan Yaffe</strong> (Tel Aviv University),
-        <strong>Ben Maman</strong>, <strong>Meinard Müller</strong> (AudioLabs Erlangen),
-        <strong>Amit H. Bermano</strong> (Tel Aviv University)
-      </p>
 
-      <div class="publication-links">
-        <span class="link-block">
-          <a href="https://arxiv.org/pdf/2406.17382.pdf" target="_blank"
-             class="external-link button is-normal is-rounded is-dark">
-            <span class="icon"><i class="fas fa-file-pdf"></i></span>
-            <span>Paper</span>
-          </a>
-        </span>
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-widescreen">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Count the Notes: Histogram-Based Supervision for Automatic Music Transcription</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">Jonathan Yaffe<sup>1</sup>,</span>
+            <span class="author-block">Ben Maman<sup>1</sup>,</span>
+            <span class="author-block">Meinard Müller<sup>2</sup>,</span>
+            <span class="author-block"><a href="https://www.cs.tau.ac.il/~amberman/">Amit H. Bermano</a><sup>1</sup></span>
+          </div>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>Tel Aviv University,</span>
+            <span class="author-block"><sup>2</sup>AudioLabs Erlangen</span>
+          </div>
 
-        <span class="link-block">
-          <a href="static/pdfs/supplementary_material.pdf" target="_blank"
-             class="external-link button is-normal is-rounded is-dark">
-            <span class="icon"><i class="fas fa-file-pdf"></i></span>
-            <span>Supplementary</span>
-          </a>
-        </span>
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <span class="link-block">
+                <a href="https://arxiv.org/pdf/2406.17382.pdf" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2406.17382" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="ai ai-arxiv"></i></span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://github.com/Yoni-Yaffe/count-the-notes" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                  <span>Code & Data</span>
+                </a>
+              </span>
+            </div>
+          </div>
 
-        <span class="link-block">
-          <a href="https://github.com/Yoni-Yaffe/count-the-notes" target="_blank"
-             class="external-link button is-normal is-rounded is-dark">
-            <span class="icon"><i class="fab fa-github"></i></span>
-            <span>Code</span>
-          </a>
-        </span>
-
-        <span class="link-block">
-          <a href="https://arxiv.org/abs/2406.17382" target="_blank"
-             class="external-link button is-normal is-rounded is-dark">
-            <span class="icon"><i class="ai ai-arxiv"></i></span>
-            <span>Abstract</span>
-          </a>
-        </span>
+        </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
   <section class="section">
     <div class="container content">
