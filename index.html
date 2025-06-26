@@ -5,21 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Count the Notes</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
   <style>
     .video-container { margin-bottom: 2rem; }
     iframe, video { width: 100%; height: 120px; }
+    .publication-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1rem; }
   </style>
 </head>
 <body>
   <section class="section">
-    <div class="container">
-      <h1 class="title is-2 has-text-centered">Count the Notes: Histogram-Based Supervision for AMT</h1>
-      <p class="has-text-centered">
-        <strong>Anonymous Authors</strong><br>
-        <a class="button is-link is-small" href="#">ISMIR 2025 PDF</a>
-        <a class="button is-link is-small" href="#">arXiv</a>
-        <a class="button is-dark is-small" href="#">Code (coming soon)</a>
+    <div class="container has-text-centered">
+      <h1 class="title is-2">Count the Notes: Histogram-Based Supervision for AMT</h1>
+      <p>
+        <strong>Jonathan Yaffe</strong> (Tel Aviv University),
+        <strong>Ben Maman</strong>, <strong>Meinard Müller</strong> (AudioLabs Erlangen),
+        <strong>Amit H. Bermano</strong> (Tel Aviv University)
       </p>
+
+      <div class="publication-links">
+        <span class="link-block">
+          <a href="https://arxiv.org/pdf/2406.17382.pdf" target="_blank"
+             class="external-link button is-normal is-rounded is-dark">
+            <span class="icon"><i class="fas fa-file-pdf"></i></span>
+            <span>Paper</span>
+          </a>
+        </span>
+
+        <span class="link-block">
+          <a href="static/pdfs/supplementary_material.pdf" target="_blank"
+             class="external-link button is-normal is-rounded is-dark">
+            <span class="icon"><i class="fas fa-file-pdf"></i></span>
+            <span>Supplementary</span>
+          </a>
+        </span>
+
+        <span class="link-block">
+          <a href="https://github.com/Yoni-Yaffe/count-the-notes" target="_blank"
+             class="external-link button is-normal is-rounded is-dark">
+            <span class="icon"><i class="fab fa-github"></i></span>
+            <span>Code</span>
+          </a>
+        </span>
+
+        <span class="link-block">
+          <a href="https://arxiv.org/abs/2406.17382" target="_blank"
+             class="external-link button is-normal is-rounded is-dark">
+            <span class="icon"><i class="ai ai-arxiv"></i></span>
+            <span>Abstract</span>
+          </a>
+        </span>
+      </div>
     </div>
   </section>
 
@@ -36,11 +71,10 @@
     <div class="container content">
       <h2 class="title is-4">Qualitative Examples</h2>
 
-      <!-- Example 1 -->
       <div class="columns is-centered video-container">
         <div class="column">
-          <h3 class="title is-6">Bach Prelude (Original)</h3>
-          <iframe src="https://www.youtube.com/embed/sample1"></iframe>
+          <h3 class="title is-6">Example 1: Bach Prelude (Original)</h3>
+          <iframe src="https://www.youtube.com/embed/sample1" frameborder="0" allowfullscreen></iframe>
         </div>
         <div class="column">
           <h3 class="title is-6">Transcription</h3>
@@ -50,7 +84,7 @@
         </div>
       </div>
 
-      <!-- Additional examples go here... (copy block above) -->
+      <!-- Additional examples can be added similarly -->
 
     </div>
   </section>
