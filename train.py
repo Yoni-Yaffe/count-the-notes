@@ -14,6 +14,63 @@ from conversion_maps import pop_conversion_map, classic_conversion_map, constant
 import sys
 import yaml
 import random
+import argparse
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Train the Onsets and Frames model with optional YAML configuration override"
+    )
+
+    # Config file
+    parser.add_argument('--logdir', type=str, default=None, help='Directory to store logs and checkpoints')
+
+    # Training parameters
+    parser.add_argument('--batch-size', type=int, default=8, help='Batch size for training')
+    parser.add_argument('--epochs', type=int, default=5, help='Number of training epochs')
+    parser.add_argument('--iterations', type=int, default=20000, help='Training iterations per epoch')
+    parser.add_argument('--checkpoint-interval', type=int, default=1, help='Epoch interval for saving model checkpoints')
+    parser.add_argument('--learning-rate', type=float, default=1e-4, help='Initial learning rate')
+    parser.add_argument('--learning-rate-decay-steps', type=int, default=0, help='Learning rate decay steps')
+    parser.add_argument('--clip-gradient-norm', type=float, default=3, help='Clip gradient norm value (if any)')
+
+    # Dataset & model config
+    parser.add_argument('--transcriber-ckpt', type=str, default=None, help='Path to transcriber checkpoint')
+    parser.add_argument('--dataset-name', type=str, default='em_dataset', help='Name of the dataset')
+    parser.add_argument('--tsv-dir', type=str, default="NoteEM_tsv", help='Path to TSV metadata files')
+    parser.add_argument('--train-data-path', type=str, default=None, help='Root path to training audio files')
+    parser.add_argument('--labels-dir-path', type=str, default=None, help='Directory to save or load label files')
+
+    # Optional features
+    parser.add_argument('--pitch-shift', action='store_true', help='Enable pitch shifting')
+    parser.add_argument('--pitch-shift-limit', type=int, default=5, help='Maximum semitones to shift during pitch shifting')
+    parser.add_argument('--seed', type=int, default=0, help='Random seed')
+    parser.add_argument('--n-weight', type=float, default=2.0, help='Weight for positive onset loss')
+    parser.add_argument('--groups', nargs='*', default=None, help='Group names for dataset split')
+    parser.add_argument('--make-evaluation', action='store_true', help='Keep evaluation file outputs')
+    parser.add_argument('--evaluation-list', type=str, default=None, help='List of files to evaluate only')
+    parser.add_argument('--save-to-memory', action='store_true', help='Cache audio features in memory')
+    parser.add_argument('--smooth-labels', action='store_true', help='Apply smoothing to labels')
+    parser.add_argument('--use-onset-mask', action='store_true', help='Apply onset mask during training')
+    parser.add_argument('--with-onset-mask', action='store_true', help='Use onset mask in model loss computation')
+
+    # Pseudo-labels and label update
+    parser.add_argument('--psuedo-labels', action='store_true', help='Enable pseudo-label generation')
+    parser.add_argument('--counting-window', type=int, default=1000, help='Window size for label counting')
+    parser.add_argument('--update-labels', action='store_true', help='Enable label update with model predictions')
+    parser.add_argument('--best-dist-update', action='store_true', help='Use best distance strategy for label updates')
+    parser.add_argument('--best-dist-vec', action='store_true', help='Use vectorized best distance update')
+    parser.add_argument('--peak-size', type=int, default=3, help='Peak size for onset peak detection')
+    parser.add_argument('--counting-window-hop', type=int, default=0, help='Hop size for counting window')
+    parser.add_argument('--no-save-updated-labels-midis', dest='save_updated_labels_midis', action='store_false', help='Disable saving of updated label MIDI files (enabled by default)')
+
+    # Onset-only model mode
+    parser.add_argument('--onset-no-frames-model', action='store_true', help='Use onset-only model (OnsetsNoFrames) this is more efficient when training only the onset stack. At the end we just take the frame stack from the initial model')
+
+    # Runtime options
+    parser.add_argument('--num-workers', type=int, default=0, help='Number of DataLoader workers (0 = main process)')
+
+    return parser.parse_args()
 
 
 def set_diff(model, diff=True):
@@ -33,7 +90,7 @@ def worker_init_fn(worker_id):
 
 
 def train(logdir, device, iterations, checkpoint_interval, batch_size, sequence_length, learning_rate, learning_rate_decay_steps,
-          clip_gradient_norm, epochs, transcriber_ckpt, multi_ckpt, config: dict):
+          clip_gradient_norm, epochs, transcriber_ckpt, config: dict):
     
     print(f"config -  {config}")
     print("Cuda is available:", torch.cuda.is_available())
@@ -86,20 +143,14 @@ def train(logdir, device, iterations, checkpoint_interval, batch_size, sequence_
         fp.write(f"Parameters:\ndevice: {device}, iterations: {iterations}, checkpoint_interval: {checkpoint_interval},"
                  f" batch_size: {batch_size}, sequence_length: {sequence_length}, learning_rate: {learning_rate}, "
                  f"learning_rate_decay_steps: {learning_rate_decay_steps}, clip_gradient_norm: {clip_gradient_norm}, "
-                 f"epochs: {epochs}, transcriber_ckpt: {transcriber_ckpt}, multi_ckpt: {multi_ckpt}, n_weight: {n_weight}\n")
+                 f"epochs: {epochs}, transcriber_ckpt: {transcriber_ckpt}, n_weight: {n_weight}\n")
     
     if 'groups' in config:
         train_groups = config['groups']
     else:
         train_groups = [dataset_name]
     
-    conversion_map = None
-    if 'use_pop_conversion_map' in config and config['use_pop_conversion_map']:
-        conversion_map = pop_conversion_map.conversion_map
-    elif 'use_classic_conversion_map' in config and config['use_classic_conversion_map']:
-        conversion_map = classic_conversion_map.conversion_map
-    elif 'use_constant_conversion_map' in config and config['use_constant_conversion_map']:
-        conversion_map = constant_conversion_map.conversion_map
+    conversion_map = constant_conversion_map.conversion_map
     
     instrument_map = None
         
@@ -125,7 +176,7 @@ def train(logdir, device, iterations, checkpoint_interval, batch_size, sequence_
         print('len dataset', len(dataset), len(dataset.data))
 
     #####
-    if not multi_ckpt:
+    if transcriber_ckpt is None:
         model_complexity = 64
         onset_complexity = 1.5
         # We create a new transcriber with N_KEYS classes for each instrument:
@@ -311,43 +362,31 @@ def train(logdir, device, iterations, checkpoint_interval, batch_size, sequence_
     
     
     
-def train_wrapper(yaml_config: dict, logdir):
-    config = yaml_config['train_params']
-    transcriber_ckpt = config['transcriber_ckpt']
-    multi_ckpt = config['multi_ckpt']
-    checkpoint_interval = config['checkpoint_interval']
-    batch_size = config['batch_size']
-    iterations = config['iterations']
-    learning_rate = config['learning_rate']
-    learning_rate_decay_steps = config['learning_rate_decay_steps']
-    clip_gradient_norm = config['clip_gradient_norm']
-    epochs = config['epochs']
-    
+def train_from_args(args):
+    config = vars(args)  # Convert Namespace to dict for easy access
+    transcriber_ckpt = args.transcriber_ckpt
+    checkpoint_interval = args.checkpoint_interval
+    batch_size = args.batch_size
+    iterations = args.iterations
+    learning_rate = args.learning_rate
+    learning_rate_decay_steps = args.learning_rate_decay_steps
+    clip_gradient_norm = args.clip_gradient_norm
+    epochs = args.epochs
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    sequence_length = constants.SEQ_LEN
 
-    sequence_length = constants.SEQ_LEN 
+    logdir = args.logdir or f"./logdir-{datetime.now().strftime('%y%m%d-%H%M%S')}"
+    os.makedirs(logdir, exist_ok=True)
 
-
-    train(logdir, device, iterations, checkpoint_interval, batch_size, sequence_length, learning_rate, learning_rate_decay_steps,
-          clip_gradient_norm, epochs, transcriber_ckpt, multi_ckpt, config)
-    
+    train(
+        logdir, device, iterations, checkpoint_interval, batch_size,
+        sequence_length, learning_rate, learning_rate_decay_steps,
+        clip_gradient_norm, epochs, transcriber_ckpt, config
+    )
     
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        yaml_path = 'config.yaml'
-    else:
-        logdir = sys.argv[1]
-        yaml_path = os.path.join(logdir, 'run_config.yaml')
-
-    with open(yaml_path, 'r') as fp:
-        yaml_config = yaml.load(fp, Loader=yaml.FullLoader)
-    
-    if 'logdir' not in yaml_config:
-        print('did not find a log dir')
-        logdir = f"/logdir-{datetime.now().strftime('%y%m%d-%H%M%S')}" # ckpts and midi will be saved here
-        os.makedirs(logdir, exist_ok=True)
-        
-    train_wrapper(yaml_config, logdir)
+    args = parse_args()
+    train_from_args(args)
     
