@@ -32,7 +32,7 @@
           <div class="is-size-5 publication-authors">
             <span class="author-block">Jonathan Yaffe<sup>1</sup>,</span>
             <span class="author-block">Ben Maman<sup>1</sup>,</span>
-            <span class="author-block">Meinard Müller<sup>2</sup>,</span>
+            <span class="author-block"><a href="https://www.audiolabs-erlangen.de/fau/professor/mueller">Meinard Müller</a><sup>2</sup></span>
             <span class="author-block"><a href="https://www.cs.tau.ac.il/~amberman/">Amit H. Bermano</a><sup>1</sup></span>
           </div>
           <div class="is-size-5 publication-authors">
@@ -43,10 +43,10 @@
           <div class="column has-text-centered">
             <div class="publication-links">
               <span class="link-block">
-                <a href="https://arxiv.org/pdf/2406.17382.pdf" class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
-                  <span>Paper</span>
-                </a>
+              <a href="static/pdfs/count_the_notes.pdf" class="external-link button is-normal is-rounded is-dark" target="_blank">
+              <span class="icon"><i class="fas fa-file-pdf"></i></span>
+              <span>Paper</span>
+            </a>
               </span>
               <span class="link-block">
                 <a href="https://arxiv.org/abs/2406.17382" class="external-link button is-normal is-rounded is-dark">
@@ -78,27 +78,86 @@
     </div>
   </section>
 
-  <section class="section">
-    <div class="container content">
-      <h2 class="title is-4">Qualitative Examples</h2>
+ <section class="section">
+  <div class="container content">
+    <h2 class="title is-4">Qualitative Examples</h2>
+    <p>Each video begins with the original audio and transitions into the model's transcription.</p>
 
-      <div class="columns is-centered video-container">
-        <div class="column">
-          <h3 class="title is-6">Example 1: Bach Prelude (Original)</h3>
-          <iframe src="https://www.youtube.com/embed/sample1" frameborder="0" allowfullscreen></iframe>
-        </div>
-        <div class="column">
-          <h3 class="title is-6">Transcription</h3>
-          <video controls>
-            <source src="html_midi/bach_prelude.mp4" type="video/mp4">
-          </video>
-        </div>
+    <div class="columns is-multiline">
+      <div class="column is-half">
+        <h3 class="title is-6">1. Rejouissance (Clarinet, Sax, Tuba)</h3>
+        <video controls>
+          <source src="static/videos/23_Rejouissance_cl_sax_tba_colored.mp4" type="video/mp4">
+        </video>
+        <p><a href="https://labsites.rochester.edu/air/projects/URMP.html" target="_blank">Original Piece</a></p>
       </div>
 
-      <!-- Additional examples can be added similarly -->
+      <div class="column is-half">
+        <h3 class="title is-6">2. ABBA - Mamma Mia</h3>
+        <video controls>
+          <source src="static/videos/abba_colored.mp4" type="video/mp4">
+        </video>
+              <p><a href="https://www.youtube.com/watch?v=unfzfe8f9NI" target="_blank">Original Piece</a></p>
+      </div>
 
+      <div class="column is-half">
+        <h3 class="title is-6">3. Bach – Violin Partita No. 2</h3>
+        <video controls>
+          <source src="static/videos/Bach：Violin Partita No2_VIOLIN.mp4" type="video/mp4">
+        </video>
+        <p><a href="https://youtu.be/gryLt8QrKvE?si=PMCvf2I8VlgLyp1v&t=649" target="_blank">Original Piece</a></p>
+      </div>
+
+      <div class="column is-half">
+        <h3 class="title is-6">4. Beethoven Sonata No. 25 (Piano)</h3>
+        <video controls>
+          <source src="static/videos/Beethoven Sonata No_25_PIANO_colored.mp4" type="video/mp4">
+        </video>
+                <p><a href="https://youtu.be/QovNsObNtVo?si=-6U2dAfoQnOtYxbc" target="_blank">Original Piece</a></p>
+      </div>
+
+      <div class="column is-half">
+        <h3 class="title is-6">5. Vivaldi – Four Seasons</h3>
+        <video controls>
+          <source src="static/videos/four_Seasons.mp4" type="video/mp4">
+        </video>
+                <p><a href="https://youtu.be/GRxofEmo3HA?si=ko4PPGhj55KuGBEr" target="_blank">Original Piece</a></p>
+      </div>
+
+      <div class="column is-half">
+        <h3 class="title is-6">6. Hagrid's Friendly Bird (Flute)</h3>
+        <video controls>
+          <source src="static/videos/Hagrid's friendly bird _FLUTE_colored.mp4" type="video/mp4">
+        </video>
+            <p><a href="https://youtu.be/_mGzWtuf2X8?si=7OXKLNJLXQn3yv85" target="_blank">Original Piece</a></p>
+      </div>
+
+      <div class="column is-half">
+        <h3 class="title is-6">7. Pachelbel – Canon in D (String Quartet)</h3>
+        <video controls>
+          <source src="static/videos/Johann Pachelbel Canon in D STRING_QUARTET.mp4" type="video/mp4">
+        </video>
+                <p><a href="https://youtu.be/es_3F3TLJS0?si=fd-sULA_c9Fg_WD7&t=102" target="_blank">Original Piece</a></p>
+      </div>
+
+      <div class="column is-half">
+        <h3 class="title is-6">8. MAESTRO Example (Track02)</h3>
+        <video controls>
+          <source src="static/videos/maestro_example.mp4" type="video/mp4">
+        </video>
+                <p><a href="https://magenta.tensorflow.org/datasets/maestro" target="_blank">Original Piece</a></p>
+      </div>
+
+      <div class="column is-half">
+        <h3 class="title is-6">9. Mozart – Violin Sonata No. 32</h3>
+        <video controls>
+          <source src="static/videos/Mozart - Violin Sonata No 32_VIOLIN_PIANO.mp4" type="video/mp4">
+        </video>
+                <p><a href="https://youtu.be/zM6p0I2KTdU?si=EqeiWnlQvdmEahB4&t=950" target="_blank">Original Piece</a></p>
+      </div>
     </div>
-  </section>
+  </div>
+</section>
 
   <section class="section">
     <div class="container content">
