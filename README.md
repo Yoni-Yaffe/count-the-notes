@@ -36,6 +36,7 @@ The implementation is based on the following projects:
 ├── inference.py                   # ▶ Entry point: inference/evaluation
 ├── ckpts/                         # Contains a *link* to download a synthetic‑data transcriber
 │   └── checkpoint_link.txt  #  (see Bootstrap Checkpoint)
+├── datasets/                      # Directory that should contain the datasets. You can see the expected format in datasets/README.md
 ├── onsets_and_frames/             # Upstream architecture (lightly modified)
 ├── conversion_maps/               # Instrument ↔︎ MIDI helpers
 ├── make_pitch_shifted_copies.py   # Data augmentation script
