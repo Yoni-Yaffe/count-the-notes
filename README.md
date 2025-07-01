@@ -64,6 +64,13 @@ pip install -r requirements.txt
 ```
 
 ---
+## Bootstrap Checkpoint
+
+We do **not** ship large model weights.
+Instead, the folder `ckpts/` contains a small text file `checkpoint_link.txt.txt` with a download link to a transcriber trained purely on synthetic MIDI renderings.
+
+
+---
 
 ## Training & Inference
 
@@ -71,7 +78,7 @@ pip install -r requirements.txt
 
 
 ```bash
-    # See full help
+# See full help
 python train.py -h
 ```
 
@@ -83,12 +90,7 @@ python inference.py -h
 ```
 ---
 
-## Bootstrap Checkpoint
 
-We do **not** ship large model weights.
-Instead, the folder `ckpts/` contains a small text file `checkpoint_link.txt.txt` with a download link to a transcriber trained purely on synthetic MIDI renderings.
-
----
 
 <!-- ## Credits & Citation
 
