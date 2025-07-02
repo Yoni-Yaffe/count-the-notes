@@ -1,18 +1,19 @@
-from .constants import *
 import numpy as np
-from dtw import *
 import soundfile
 from torch.utils.data import Dataset
 from tqdm import tqdm
 import random
 import os
+from onsets_and_frames import constants
+import torch
 from onsets_and_frames.mel import melspectrogram
-from onsets_and_frames.midi_utils import *
-from onsets_and_frames.utils import *
+from onsets_and_frames.midi_utils import midi_to_frames, save_midi_alignments_and_predictions
+from onsets_and_frames.utils import smooth_labels, shift_label, get_diff, get_peaks
+from onsets_and_frames.constants import N_KEYS, SAMPLE_RATE, DEFAULT_DEVICE
 import time
 import sys
 import librosa
-from onsets_and_frames import constants
+
 
 class EMDATASET(Dataset):
     def __init__(self,
@@ -427,7 +428,6 @@ class EMDATASET(Dataset):
 
             aligned_onsets = np.zeros(onset_pred_np.shape, dtype=bool)
             aligned_frames = np.zeros(onset_pred_np.shape, dtype=bool)
-            aligned_offsets = np.zeros(onset_pred_np.shape, dtype=bool)
 
             
             # This block is the main difference between the counting approach and the DTW approach.
@@ -531,10 +531,8 @@ class EMDATASET(Dataset):
                 elif not BEST_DIST or bon_dist < prev_bon_dist:
                     update_count += 1
                     print("Updated Labels")
-                    if max_pred:
-                        data['label'] = torch.from_numpy(label).float()
-                    else:
-                        data['label'] = torch.from_numpy(label).byte()
+
+                    data['label'] = torch.from_numpy(label).byte()
                     
                     data['BON'] = bon_dist
                     print("saved updated pt")

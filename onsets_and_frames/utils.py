@@ -1,9 +1,7 @@
 import torch
 import torch.nn.functional as F
-from.constants import *
+from onsets_and_frames.constants import N_KEYS, MAX_MIDI, MIN_MIDI, HOP_LENGTH, DTW_FACTOR
 import numpy as np
-import librosa
-import random
 
 
 def cycle(iterable):

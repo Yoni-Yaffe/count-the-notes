@@ -4,7 +4,10 @@ import numpy as np
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from onsets_and_frames import *
+from onsets_and_frames.constants import HOP_LENGTH, N_MELS, DEFAULT_DEVICE, MAX_MIDI, MIN_MIDI, N_KEYS
+from onsets_and_frames.transcriber import OnsetsAndFrames, OnsetsNoFrames
+from onsets_and_frames.utils import cycle
+from onsets_and_frames import constants
 from onsets_and_frames.dataset import EMDATASET
 from torch.nn import DataParallel
 import time
@@ -131,7 +134,7 @@ def parse_args():
 
     # Pseudo-labels and label update
     parser.add_argument(
-        "--psuedo-labels", action="store_true", help="Enable pseudo-label generation"
+        "--pseudo-labels", action="store_true", help="Enable pseudo-label generation"
     )
     parser.add_argument(
         "--counting-window",
@@ -140,14 +143,10 @@ def parse_args():
         help="Window size for label counting. The units are in frames each frame is HOP_LENGTH / SAMPLE_RATE seconds. For example for the defaults of HOP_LENGTH=512 and SAMPLE_RATE=16000 the window size is 1000 frames = 1000 * 512 / 16000 seconds = 32 milliseconds. So window size of 1875 is 1 minute.",
     )
     parser.add_argument(
-        "--update-labels",
-        action="store_true",
-        help="Enable label update with model predictions",
-    )
-    parser.add_argument(
-        "--best-dist-update",
-        action="store_true",
-        help="Use best distance strategy for label updates",
+        "--no-best-dist-update",
+        dest="best_dist_update",
+        action="store_false",
+        help="Disable best distance strategy for label updates (enabled by default). In this strategy we only update the labels if the bag of notes distance between the new labels and the ground truth labels is smaller than the distance between the current labels and the ground truth labels. This is used as a regularization method.",
     )
     parser.add_argument(
         "--best-dist-vec",
@@ -354,7 +353,7 @@ def train(
 
         POS = 1.1  # Pseudo-label positive threshold (value > 1 means no pseudo label).
         NEG = -0.1  # Pseudo-label negative threshold (value < 0 means no pseudo label).
-        if config["psuedo_labels"]:
+        if config["pseudo_labels"]:
             POS = 0.5
             NEG = 0.01
 
@@ -376,7 +375,7 @@ def train(
                 FRAME_POS=0.5,
                 to_save=to_save_dir,
                 first=epoch == 1,
-                update=config.get("update_labels", False),
+                update=True,
                 BEST_DIST=config.get("best_dist_update", False),
                 peak_size=config.get("peak_size", 3),
                 BEST_DIST_VEC=config.get("best_dist_vec", False),
@@ -484,7 +483,7 @@ def train(
                 )
                 torch.save(
                     {"instrument_mapping": dataset.instruments},
-                    os.path.join(logdir, "instrument_mapping.pt".format(iteration)),
+                    os.path.join(logdir, "instrument_mapping.pt"),
                 )
 
             if epochs == 1 and iteration % 1000 == 1:
@@ -514,7 +513,7 @@ def train(
 
             if epochs == 1 and iteration % 2500 == 0:
                 transcriber_path = os.path.join(
-                    logdir, "transcriber_ckpt.pt".format(iteration)
+                    logdir, "transcriber_ckpt.pt"
                 )
                 if config.get("onset_no_frames_model", False):
                     prev_transcriber.onset_stack.load_state_dict(
@@ -541,7 +540,7 @@ def train(
             )
             torch.save(
                 {"instrument_mapping": dataset.instruments},
-                os.path.join(logdir, "instrument_mapping.pt".format(epoch)),
+                os.path.join(logdir, "instrument_mapping.pt"),
             )
         print(score_msg)
 

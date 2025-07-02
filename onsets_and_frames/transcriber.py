@@ -1,12 +1,9 @@
-import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
 from .mel import melspectrogram
 from .lstm import BiLSTM
-from torch.nn import TransformerEncoderLayer, TransformerEncoder
-from onsets_and_frames.constants import *
-
+from onsets_and_frames.constants import MAX_MIDI, MIN_MIDI, N_KEYS
 
 class ConvStack(nn.Module):
     def __init__(self, input_features, output_features):
@@ -100,7 +97,7 @@ class OnsetsAndFrames(nn.Module):
         velocity_pred = self.velocity_stack(mel)
         return onset_pred, offset_pred, activation_pred, frame_pred, velocity_pred
 
-    def run_on_batch(self, batch, parallel_model=None, multi=False, positive_weight=2., inv_positive_weight=2.,
+    def run_on_batch(self, batch, parallel_model=None, positive_weight=2., inv_positive_weight=2.,
                      with_onset_mask=False):
         audio_label = batch['audio']
 
@@ -115,12 +112,6 @@ class OnsetsAndFrames(nn.Module):
             onset_pred, offset_pred, _, frame_pred, velocity_pred = self(mel)
         else:
             onset_pred, offset_pred, _, frame_pred, velocity_pred = parallel_model(mel)
-
-        if multi:
-            onset_pred = onset_pred[..., : N_KEYS]
-            offset_pred = offset_pred[..., : N_KEYS]
-            frame_pred = frame_pred[..., : N_KEYS]
-            velocity_pred = velocity_pred[..., : N_KEYS]
 
         predictions = {
             'onset': onset_pred.reshape(*onset_label.shape),
@@ -204,7 +195,7 @@ class OnsetsNoFrames(nn.Module):
 
         return onset_pred
 
-    def run_on_batch(self, batch, parallel_model=None, multi=False, positive_weight=2., inv_positive_weight=2., with_onset_mask=False):
+    def run_on_batch(self, batch, parallel_model=None, positive_weight=2., inv_positive_weight=2., with_onset_mask=False):
         audio_label = batch['audio']
 
         onset_label = batch['onset']
@@ -215,11 +206,6 @@ class OnsetsNoFrames(nn.Module):
         else:
             onset_pred = parallel_model(mel)
 
-        if multi:
-            onset_pred = onset_pred[..., : N_KEYS]
-            offset_pred = offset_pred[..., : N_KEYS]
-            frame_pred = frame_pred[..., : N_KEYS]
-            velocity_pred = velocity_pred[..., : N_KEYS]
 
         predictions = {
             'onset': onset_pred,
