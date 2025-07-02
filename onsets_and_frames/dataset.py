@@ -1,27 +1,29 @@
+import os
+import random
+import sys
+import time
+
+import librosa
 import numpy as np
 import soundfile
+import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
-import random
-import os
+
 from onsets_and_frames import constants
-import torch
+from onsets_and_frames.constants import DEFAULT_DEVICE, N_KEYS, SAMPLE_RATE
 from onsets_and_frames.mel import melspectrogram
 from onsets_and_frames.midi_utils import (
     midi_to_frames,
     save_midi_alignments_and_predictions,
 )
 from onsets_and_frames.utils import (
-    smooth_labels,
-    shift_label,
     get_diff,
-    get_peaks,
     get_logger,
+    get_peaks,
+    shift_label,
+    smooth_labels,
 )
-from onsets_and_frames.constants import N_KEYS, SAMPLE_RATE, DEFAULT_DEVICE
-import time
-import sys
-import librosa
 
 
 class EMDATASET(Dataset):

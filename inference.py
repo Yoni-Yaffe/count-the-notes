@@ -1,11 +1,15 @@
-from onsets_and_frames import *
+import argparse
+import os
+import sys
+
+import numpy as np
 import soundfile
+import torch
 from torch.nn import DataParallel
 
+from onsets_and_frames import constants
+from onsets_and_frames.constants import SAMPLE_RATE, melspectrogram
 from onsets_and_frames.midi_utils import frames2midi
-import sys
-import os
-import argparse
 
 
 def parse_args():

@@ -1,15 +1,17 @@
+import logging
+import os
+
+import numpy as np
 import torch
 import torch.nn.functional as F
+
 from onsets_and_frames.constants import (
-    N_KEYS,
+    DTW_FACTOR,
+    HOP_LENGTH,
     MAX_MIDI,
     MIN_MIDI,
-    HOP_LENGTH,
-    DTW_FACTOR,
+    N_KEYS,
 )
-import numpy as np
-import os
-import logging
 
 
 def cycle(iterable):

@@ -1,9 +1,11 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from .mel import melspectrogram
-from .lstm import BiLSTM
+
 from onsets_and_frames.constants import MAX_MIDI, MIN_MIDI, N_KEYS
+
+from .lstm import BiLSTM
+from .mel import melspectrogram
 
 
 class ConvStack(nn.Module):

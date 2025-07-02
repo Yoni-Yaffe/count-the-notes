@@ -1,10 +1,23 @@
-import numpy as np
-from onsets_and_frames.constants import *
-import mido
-from mido import Message, MidiFile, MidiTrack
-from .utils import max_inst
-from datetime import datetime
 import os
+from datetime import datetime
+
+import mido
+import numpy as np
+import torch
+from mido import Message, MidiFile, MidiTrack
+
+from onsets_and_frames.constants import (
+    DRUM_CHANNEL,
+    HOP_LENGTH,
+    HOPS_IN_OFFSET,
+    HOPS_IN_ONSET,
+    MAX_MIDI,
+    MIN_MIDI,
+    N_KEYS,
+    SAMPLE_RATE,
+)
+
+from .utils import max_inst
 
 
 def midi_to_hz(m):

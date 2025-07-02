@@ -8,12 +8,12 @@ from torch.autograd import Variable
 
 from onsets_and_frames.constants import (
     DEFAULT_DEVICE,
+    HOP_LENGTH,
+    MEL_FMAX,
+    MEL_FMIN,
     N_MELS,
     SAMPLE_RATE,
     WINDOW_LENGTH,
-    HOP_LENGTH,
-    MEL_FMIN,
-    MEL_FMAX,
 )
 
 

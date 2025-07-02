@@ -1,28 +1,30 @@
+import argparse
+import json
 import os
+import random
+import time
 from datetime import datetime
+
 import numpy as np
+import torch
+from torch.nn import DataParallel
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from conversion_maps import constant_conversion_map
+from onsets_and_frames import constants
 from onsets_and_frames.constants import (
-    HOP_LENGTH,
-    N_MELS,
     DEFAULT_DEVICE,
+    HOP_LENGTH,
     MAX_MIDI,
     MIN_MIDI,
     N_KEYS,
+    N_MELS,
 )
-from onsets_and_frames.transcriber import OnsetsAndFrames, OnsetsNoFrames
-from onsets_and_frames.utils import cycle, initialize_logging_system, get_logger
-from onsets_and_frames import constants
 from onsets_and_frames.dataset import EMDATASET
-from torch.nn import DataParallel
-import time
-from conversion_maps import constant_conversion_map
-import random
-import argparse
-import torch
-import json
+from onsets_and_frames.transcriber import OnsetsAndFrames, OnsetsNoFrames
+from onsets_and_frames.utils import cycle, get_logger, initialize_logging_system
 
 # Optional wandb import
 try:

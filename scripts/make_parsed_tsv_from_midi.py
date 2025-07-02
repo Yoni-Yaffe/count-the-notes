@@ -4,11 +4,14 @@ information of a single note: onset time, offset time, note number, velocity, an
 '''
 
 
-from tqdm import tqdm
-import numpy as np
 import os
 import warnings
+
+import numpy as np
+from tqdm import tqdm
+
 from onsets_and_frames.midi_utils import parse_midi_multi
+
 warnings.filterwarnings("ignore")
 
 def midi2tsv_process(midi_path, target_path, shift=0, force_instrument=None):

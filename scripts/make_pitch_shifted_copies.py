@@ -4,11 +4,7 @@ Create pitch shifted copies of the performance, from -5 to 5 semitones (11 copie
 
 
 import os
-import librosa
-import soundfile as sf
 from glob import glob
-import numpy as np
-
 
 # src_dir = '/path/to/performance'
 src_dir = 'new_samples_2201'
