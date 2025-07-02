@@ -167,7 +167,7 @@ def parse_args():
         help="Use vectorized best distance update",
     )
     parser.add_argument(
-        "--peak-size", type=int, default=3, help="Peak size for onset peak detection"
+        "--peak-size", type=int, default=2, help="Peak size for onset peak detection"
     )
     parser.add_argument(
         "--counting-window-hop",
