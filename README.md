@@ -4,10 +4,19 @@
 
 **ISMIR 2025 paper codebase**
 
-A framework for training automatic music transcription models using only unordered note count histograms — no aligned or ordered labels required.Official implementation of the ISMIR 2025 paper.
+CountEM is a training framework for automatic music transcription (AMT) that relies only on unordered note count histograms, eliminating the need for aligned or ordered labels.
+This repository provides the official implementation of our ISMIR 2025 paper:
+“Count the Notes: Histogram‑Based Supervision for Automatic Music Transcription.”
 
 ### Transcription Examples
 See the [project page](https://yoni-yaffe.github.io/count-the-notes/) for video demos and transcription results produced by CountEM.
+
+## Features
+
+- Train AMT models using weak, alignment-free supervision
+- Leverages only histogram-level supervision (note counts)
+- Built on top of **Onsets & Frames** and **Unaligned Supervision** codebases
+- Comes with pre-trained models and scripts for training, inference, and data conversion
 
 ### Implementation
 The implementation is based on the following projects:
@@ -53,7 +62,7 @@ The implementation is based on the following projects:
 
 ## Quick Start
 
-> Requires **Python ≥3.9** and a GPU with CUDA 11+.
+> Requires **Python ≥3.8** and a GPU with CUDA 11+.
 
 ```bash
 # 1) Create & activate a virtual‑env (recommended)
