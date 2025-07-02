@@ -8,6 +8,8 @@ from onsets_and_frames.constants import (
     DTW_FACTOR,
 )
 import numpy as np
+import os
+import logging
 
 
 def cycle(iterable):
@@ -198,3 +200,44 @@ def smooth_labels(onset_tensor):
 
     # Reshape back to original shape (T, F)
     return smoothed.squeeze(1).T
+
+
+def initialize_logging_system(logdir):
+    """Initialize the logging system once with named loggers for train and dataset."""
+    log_file = os.path.join(logdir, "training.log")
+
+    # Create formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+
+    # File handler (shared by all loggers)
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+
+    # Console handler (shared by all loggers)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(formatter)
+
+    # Create train logger
+    train_logger = logging.getLogger("train")
+    train_logger.setLevel(logging.INFO)
+    train_logger.handlers.clear()
+    train_logger.addHandler(file_handler)
+    train_logger.addHandler(console_handler)
+
+    # Create dataset logger
+    dataset_logger = logging.getLogger("dataset")
+    dataset_logger.setLevel(logging.INFO)
+    dataset_logger.handlers.clear()
+    dataset_logger.addHandler(file_handler)
+    dataset_logger.addHandler(console_handler)
+
+    return train_logger, dataset_logger
+
+
+def get_logger(name):
+    """Get a named logger. Call initialize_logging_system first."""
+    return logging.getLogger(name)

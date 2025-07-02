@@ -13,7 +13,7 @@ from onsets_and_frames.constants import (
     N_KEYS,
 )
 from onsets_and_frames.transcriber import OnsetsAndFrames, OnsetsNoFrames
-from onsets_and_frames.utils import cycle
+from onsets_and_frames.utils import cycle, initialize_logging_system, get_logger
 from onsets_and_frames import constants
 from onsets_and_frames.dataset import EMDATASET
 from torch.nn import DataParallel
@@ -23,7 +23,6 @@ import random
 import argparse
 import torch
 import json
-import traceback
 
 
 def parse_args():
@@ -222,15 +221,17 @@ def train(
     transcriber_ckpt,
     config: dict,
 ):
-    print(f"config -  {config}")
-    print("Cuda is available:", torch.cuda.is_available())
-    print("Device count:", torch.cuda.device_count())
-    print("Start time: ", datetime.now())
-    print("device ", device)
-    print("device name", torch.cuda.get_device_name(device=device))
+    # Get the train logger (logging system should already be initialized)
+    logger = get_logger("train")
+    logger.info(f"config -  {config}")
+    logger.info("Cuda is available: %s", torch.cuda.is_available())
+    logger.info("Device count: %d", torch.cuda.device_count())
+    logger.info("Start time: %s", datetime.now())
+    logger.info("device %s", device)
+    logger.info("device name %s", torch.cuda.get_device_name(device=device))
     # Place holders
-    print("HOP LENGTH", HOP_LENGTH)
-    print("SEQUENCE LENGTH", sequence_length)
+    logger.info("HOP LENGTH %d", HOP_LENGTH)
+    logger.info("SEQUENCE LENGTH %d", sequence_length)
 
     onset_precision = None
     onset_recall = None
@@ -243,10 +244,10 @@ def train(
         seed = config["seed"]
         random.seed(seed)
         np.random.seed(seed)
-        print(f"seed is set to {seed}")
+        logger.info("seed is set to %d", seed)
 
     total_run_1 = time.time()
-    print(f"device {device}")
+    logger.info("device %s", device)
     os.makedirs(logdir, exist_ok=True)
     # n_weight = 1 if HOP_LENGTH == 512 else 2
     n_weight = config["n_weight"]
@@ -261,10 +262,9 @@ def train(
     else:
         labels_path = os.path.join(logdir, "NoteEm_labels")
 
-    print("Lables path:", labels_path)
+    logger.info("Lables path: %s", labels_path)
 
     os.makedirs(labels_path, exist_ok=True)
-    score_log_path = os.path.join(logdir, "score_log.txt")
     with open(os.path.join(logdir, "score_log.txt"), "a") as fp:
         fp.write(
             f"Parameters:\ndevice: {device}, iterations: {iterations}, checkpoint_interval: {checkpoint_interval},"
@@ -302,7 +302,7 @@ def train(
         use_onset_mask=config.get("use_onset_mask", False),
     )
     if iterations > 0:
-        print("len dataset", len(dataset), len(dataset.data))
+        logger.info("len dataset %d %d", len(dataset), len(dataset.data))
 
     #####
     if transcriber_ckpt is None:
@@ -319,7 +319,7 @@ def train(
     else:
         transcriber = torch.load(transcriber_ckpt)
 
-    print("HOP LENGTH", constants.HOP_LENGTH, HOP_LENGTH)
+    logger.info("HOP LENGTH %d", constants.HOP_LENGTH, HOP_LENGTH)
 
     if hasattr(transcriber, "onset_stack"):
         set_diff(transcriber.onset_stack, True)
@@ -344,7 +344,7 @@ def train(
         transcriber2.onset_stack.load_state_dict(transcriber.onset_stack.state_dict())
         prev_transcriber = transcriber
         transcriber = transcriber2
-    print("transcriber", transcriber)
+    logger.info("transcriber %s", transcriber)
     parallel_transcriber = DataParallel(transcriber)
     parallel_transcriber = parallel_transcriber.to(device)
     optimizer = torch.optim.Adam(
@@ -388,7 +388,7 @@ def train(
             )
 
         num_workers = config.get("num_workers", 0)
-        print("num workers:", num_workers)
+        logger.info("num workers: %d", num_workers)
         if num_workers > 0:
             loader = DataLoader(
                 dataset,
@@ -497,7 +497,7 @@ def train(
                     f"Onset Recall {onset_recall:.3f} Pitch Onset Precision:  {pitch_onset_precision:.3f} "
                     f"Pitch Onset Recall  {pitch_onset_recall:.3f}\n"
                 )
-                print(score_msg)
+                logger.info(score_msg)
                 loss_list.append(np.mean(curr_loss))
                 iter_list.append(iteration)
                 curr_loss = []
@@ -514,7 +514,7 @@ def train(
                     f"Onset Recall {onset_recall:.3f} Pitch Onset Precision:  {pitch_onset_precision:.3f} "
                     f"Pitch Onset Recall  {pitch_onset_recall:.3f}\n"
                 )
-                print(score_msg)
+                logger.info(score_msg)
 
             if epochs == 1 and iteration % 2500 == 0:
                 transcriber_path = os.path.join(logdir, "transcriber_ckpt.pt")
@@ -527,10 +527,15 @@ def train(
                     torch.save(transcriber, transcriber_path)
 
         time_end = time.time()
-        score_msg = (
-            f"epoch {epoch:02d} loss: {sum(total_loss) / len(total_loss):.5f} Onset Precision:  {onset_precision:.3f} "
-            f"Onset Recall {onset_recall:.3f} Pitch Onset Precision:  {pitch_onset_precision:.3f} "
-            f"Pitch Onset Recall  {pitch_onset_recall:.3f} time label update: {time.strftime('%M:%S', time.gmtime(time_end - time_start))}\n"
+        logger.info(
+            "epoch %02d loss: %.5f Onset Precision: %.3f Onset Recall %.3f Pitch Onset Precision: %.3f Pitch Onset Recall %.3f time label update: %s",
+            epoch,
+            sum(total_loss) / len(total_loss),
+            onset_precision,
+            onset_recall,
+            pitch_onset_precision,
+            pitch_onset_recall,
+            time.strftime('%M:%S', time.gmtime(time_end - time_start))
         )
 
         save_condition = epoch % checkpoint_interval == 1 or checkpoint_interval == 1
@@ -545,11 +550,12 @@ def train(
                 {"instrument_mapping": dataset.instruments},
                 os.path.join(logdir, "instrument_mapping.pt"),
             )
-        print(score_msg)
+        logger.info(score_msg)
 
     total_run_2 = time.time()
-    print(
-        f"Total Runtime: {time.strftime('%H:%M:%S', time.gmtime(total_run_2 - total_run_1))}\n"
+    logger.info(
+        "Total Runtime: %s",
+        time.strftime('%H:%M:%S', time.gmtime(total_run_2 - total_run_1))
     )
 
     # keep last optimized state
@@ -561,6 +567,12 @@ def train(
 
 
 def train_from_args(args):
+    logdir = args.logdir or f"logs/logdir-{datetime.now().strftime('%y%m%d-%H%M%S')}"
+    os.makedirs(logdir, exist_ok=True)
+    # Initialize logging system once and get train logger
+    _, _ = initialize_logging_system(logdir)  # Initialize the system
+    logger = get_logger("train")  # Get the train logger
+
     config = vars(args)  # Convert Namespace to dict for easy access
     transcriber_ckpt = args.transcriber_ckpt
     checkpoint_interval = args.checkpoint_interval
@@ -574,19 +586,16 @@ def train_from_args(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     sequence_length = constants.SEQ_LEN
 
-    logdir = args.logdir or f"logs/logdir-{datetime.now().strftime('%y%m%d-%H%M%S')}"
-    print(f"Log directory: {logdir}")
-    os.makedirs(logdir, exist_ok=True)
+    logger.info(f"Log directory: {logdir}")
 
     try:
         config_path = os.path.join(logdir, "args_config.json")
         with open(config_path, "w") as f:
             json.dump(vars(args), f, indent=4)
-        print(f"Saved config to {config_path}")
+        logger.info(f"Saved config to {config_path}")
     except Exception as e:
-        print("Warning: Failed to save command-line arguments to JSON.")
-        print("Error:", str(e))
-        traceback.print_exc()
+        logger.warning("Failed to save command-line arguments to JSON.")
+        logger.error("Error: %s", str(e))
 
     train(
         logdir,

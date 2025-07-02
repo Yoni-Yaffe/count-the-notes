@@ -11,7 +11,13 @@ from onsets_and_frames.midi_utils import (
     midi_to_frames,
     save_midi_alignments_and_predictions,
 )
-from onsets_and_frames.utils import smooth_labels, shift_label, get_diff, get_peaks
+from onsets_and_frames.utils import (
+    smooth_labels,
+    shift_label,
+    get_diff,
+    get_peaks,
+    get_logger,
+)
 from onsets_and_frames.constants import N_KEYS, SAMPLE_RATE, DEFAULT_DEVICE
 import time
 import sys
@@ -42,6 +48,9 @@ class EMDATASET(Dataset):
         smooth_labels=False,
         use_onset_mask=False,
     ):
+        # Get the dataset logger (logging system should already be initialized by train.py)
+        self.logger = get_logger("dataset")
+
         self.audio_path = audio_path
         self.tsv_path = tsv_path
         self.labels_path = labels_path
@@ -64,9 +73,10 @@ class EMDATASET(Dataset):
         self.use_onset_mask = use_onset_mask
         self.pitch_shift_limit = pitch_shift_limit
 
-        print("Save to memory is ", self.save_to_memory)
-        print("len file list", len(self.file_list))
-        print("\n\n")
+        self.logger.info("Save to memory is %s", self.save_to_memory)
+        self.logger.info("len file list %d", len(self.file_list))
+        self.logger.info("\n\n")
+
         if instrument_map is None:
             self.get_instruments(conversion_map=conversion_map)
         else:
@@ -78,7 +88,7 @@ class EMDATASET(Dataset):
             return
         self.load_pts(self.file_list)
         self.data = []
-        print("Reading files...")
+        self.logger.info("Reading files...")
         for input_files in tqdm(self.file_list, desc="creating data list"):
             flac, _ = input_files
             audio_len = librosa.get_duration(path=flac)
@@ -430,35 +440,29 @@ class EMDATASET(Dataset):
         BEST_DIST_VEC=False,
         counting_window_hop=0,
     ):
-        print("Updating pts...")
-        print(f"First {first}")
+        self.logger.info("Updating pts...")
+        self.logger.info("First %s", first)
         total_counting_time = 0.0  # Initialize total time for counting-based alignment
 
-        print("POS, NEG", POS, NEG)
+        self.logger.info("POS, NEG: %s, %s", POS, NEG)
         if to_save is not None:
             os.makedirs(to_save, exist_ok=True)
-        print("there are", len(self.pts), "pts")
+        self.logger.info("There are %d pts", len(self.pts))
         update_count = 0
         sys.stdout.flush()
         onlt_pitch_0_files = [f for f in self.file_list if "#0" in f[0]]
         for input_files in tqdm(onlt_pitch_0_files, desc="updating pts"):
             flac, tsv = input_files
             data = torch.load(self.flac_to_pt_path(flac))
-            # data = self.load(*input_files)
-            # for flac, data in tqdm(self.pts.items(), desc='updating pts'):
             if "unaligned_label" not in data:
-                print("No unaligned labels for", flac)
+                self.logger.warning("No unaligned labels for %s", flac)
                 continue
             audio_inp = data["audio"].float() / 32768.0
             MAX_TIME = 5 * 60 * SAMPLE_RATE
             audio_inp_len = len(audio_inp)
             if audio_inp_len > MAX_TIME:
                 n_segments = int(np.ceil(audio_inp_len / MAX_TIME))
-                print("long audio, splitting to {} segments".format(n_segments))
-                print(
-                    "number of needed segments is ",
-                    int(np.ceil(audio_inp_len / MAX_TIME)),
-                )
+                self.logger.info("Long audio, splitting to %d segments", n_segments)
                 seg_len = MAX_TIME
                 onsets_preds = []
                 offset_preds = []
@@ -491,7 +495,7 @@ class EMDATASET(Dataset):
                     audio_inp.reshape(-1, audio_inp.shape[-1])[:, :-1]
                 ).transpose(-1, -2)
                 onset_pred, offset_pred, _, frame_pred, _ = transcriber(mel)
-            print("done predicting.")
+            self.logger.info("Done predicting.")
 
             # We assume onset predictions are of length N_KEYS * (len(instruments) + 1),
             # first N_KEYS classes are the first instrument, next N_KEYS classes are the next instrument, etc.,
@@ -501,7 +505,7 @@ class EMDATASET(Dataset):
             frame_pred = frame_pred.detach().squeeze().cpu()
 
             PEAK_SIZE = peak_size
-            print("PEAK_SIZE", PEAK_SIZE)
+            self.logger.info("PEAK_SIZE: %d", PEAK_SIZE)
             # we peak peak the onset prediction to only keep local maximum onsets
             if peak_size > 0:
                 peaks = get_peaks(
@@ -525,7 +529,7 @@ class EMDATASET(Dataset):
             )
 
             bon_dist /= gt_bag_of_notes.sum()
-            print("bag of notes dist", bon_dist)
+            self.logger.info("bag of notes dist: %f", bon_dist)
             ####
 
             aligned_onsets = np.zeros(onset_pred_np.shape, dtype=bool)
@@ -536,8 +540,11 @@ class EMDATASET(Dataset):
             # denote by K the number of times it occurs in the unaligned label. We simply take the K highest local
             # peaks predicted by the current model.
             # Split unaligned onsets into chunks of size counting_window_length
-            print(
-                f"unaligned onsets shape {unaligned_onsets.shape} counting window length {counting_window_length} counting window hop {counting_window_hop}"
+            self.logger.info(
+                "unaligned onsets shape: %s, counting window length: %d, counting window hop: %d",
+                unaligned_onsets.shape,
+                counting_window_length,
+                counting_window_hop,
             )
             assert counting_window_hop <= counting_window_length
             if counting_window_hop == 0:
@@ -549,7 +556,7 @@ class EMDATASET(Dataset):
                 else int(np.ceil(len(unaligned_onsets) / counting_window_hop))
             )
 
-            print(f"number of chunks {num_chunks}")
+            self.logger.info("number of chunks: %d", num_chunks)
             start_time = time.time()
             for chunk_idx in range(num_chunks):
                 start_idx = chunk_idx * counting_window_hop
@@ -581,8 +588,10 @@ class EMDATASET(Dataset):
 
             counting_duration = time.time() - start_time
             total_counting_time += counting_duration
-            print(
-                f'Counting alignment for file "{flac}" took {counting_duration:.2f} seconds.'
+            self.logger.info(
+                "Counting alignment for file '%s' took %.2f seconds.",
+                flac,
+                counting_duration,
             )
 
             # Pseudo labels, Pos bigger than 1 is equivalent to not using pseudo labels
@@ -625,7 +634,7 @@ class EMDATASET(Dataset):
             prev_bon_dist_vec = data.get("BON_VEC", None)
             if update:
                 if BEST_DIST_VEC:
-                    print("Updated Labels")
+                    self.logger.info("Updated Labels")
                     if prev_bon_dist_vec is None:
                         raise ValueError(
                             "BEST_DIST_VEC is True but no previous BON_VEC found"
@@ -646,10 +655,10 @@ class EMDATASET(Dataset):
                                 updated_flag = True
                         if updated_flag:
                             update_count += 1
-                        print(f"Updated {num_pitches_updated} pitches")
+                        self.logger.info("Updated %d pitches", num_pitches_updated)
                     data["label"] = prev_label
                     data["BON_VEC"] = prev_bon_dist_vec
-                    print("saved updated pt")
+                    self.logger.info("saved updated pt")
                     torch.save(
                         data,
                         self.labels_path
@@ -661,12 +670,12 @@ class EMDATASET(Dataset):
 
                 elif not BEST_DIST or bon_dist < prev_bon_dist:
                     update_count += 1
-                    print("Updated Labels")
+                    self.logger.info("Updated Labels")
 
                     data["label"] = torch.from_numpy(label).byte()
 
                     data["BON"] = bon_dist
-                    print("saved updated pt")
+                    self.logger.info("saved updated pt")
                     torch.save(
                         data,
                         self.labels_path
@@ -677,8 +686,10 @@ class EMDATASET(Dataset):
                     )
 
             if bon_dist < prev_bon_dist:
-                print(
-                    f"Bag of notes distance improved from {prev_bon_dist} to {bon_dist}"
+                self.logger.info(
+                    "Bag of notes distance improved from %f to %f",
+                    prev_bon_dist,
+                    bon_dist,
                 )
                 data["BON"] = bon_dist
 
@@ -697,7 +708,9 @@ class EMDATASET(Dataset):
                         use_time=False,
                     )
 
-        print(f"Updated {update_count} pts out of {len(onlt_pitch_0_files)}")
-        print(
-            f"Total counting alignment time for all files: {total_counting_time:.2f} seconds."
+        self.logger.info(
+            "Updated %d pts out of %d", update_count, len(onlt_pitch_0_files)
+        )
+        self.logger.info(
+            "Total counting alignment time for all files: %.2f seconds.", total_counting_time
         )
