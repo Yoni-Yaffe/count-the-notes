@@ -32,18 +32,19 @@ The implementation is based on the following projects:
 
 ```
 .
-├── train.py                       # ▶ Entry point: training
-├── inference.py                   # ▶ Entry point: inference/evaluation
-├── ckpts/                         # Contains a *link* to download a synthetic‑data transcriber
-│   └── checkpoint_link.txt  #  (see Bootstrap Checkpoint)
-├── datasets/                      # Directory that should contain the datasets. You can see the expected format in datasets/README.md
-├── onsets_and_frames/             # Upstream architecture (lightly modified)
-├── conversion_maps/               # Instrument ↔︎ MIDI helpers
-├── make_pitch_shifted_copies.py   # Data augmentation script
-├── make_parsed_tsv_from_midi.py   # MIDI → TSV label conversion
-├── NoteEM_tsv/                    # directory for midi labels in tsv format (used for training and eval)
-├── static/ , index.html           # Demo / docs site assets (optional)
-├── requirements.txt               # Python dependencies
+├── train.py                           # ▶ Entry point: training
+├── inference.py                       # ▶ Entry point: inference/evaluation
+├── ckpts/                             # Contains a *link* to download a synthetic‑data transcriber
+│   └── checkpoint_link.txt            #  (see Bootstrap Checkpoint)
+├── datasets/                          # Directory that should contain the datasets. You can see the expected format in datasets/README.md
+├── onsets_and_frames/                 # Upstream architecture (lightly modified)
+├── conversion_maps/                   # Instrument ↔︎ MIDI helpers
+├── scripts/                           # Utility scripts
+│   ├── make_pitch_shifted_copies.py   # Data augmentation script
+│   └── make_parsed_tsv_from_midi.py   # MIDI → TSV label conversion
+├── NoteEM_tsv/                        # directory for midi labels in tsv format (used for training and eval)
+├── static/ , index.html               # Demo / docs site assets (optional)
+├── requirements.txt                   # Python dependencies
 ├── LICENSE.md
 └── README.md
 ```
@@ -74,14 +75,32 @@ Instead, the folder `ckpts/` contains a small text file `checkpoint_link.txt.txt
 ---
 
 ## Training & Inference
-
 ### Training
 
-
 ```bash
-# See full help
+# Show full help
 python train.py -h
+
+# Example usage
+python train.py \
+  --logdir "$LOGDIR" \
+  --dataset-name <your_dataset_name> \
+  --batch-size 8 \
+  --transcriber-ckpt ckpts/model-70.pt
 ```
+
+- **Audio data**: by default the script expects your audio under  
+  `datasets/<your_dataset_name>/noteEM_audio`.  
+  Override with `--data-dir-path` if you’ve moved your datasets elsewhere.  
+  See [datasets/README.md](datasets/README.md) for the exact audio-folder layout.
+
+- **MIDI/TSV labels**: by default it reads label files from  
+  `NoteEM_tsv/<your_dataset_name>`.  
+  You can override with `--tsv-dir`.  
+  These must be in TSV format (`onset,offset,note,velocity,instrument`);  
+  use the conversion tool at  
+  `scripts/make_parsed_tsv_from_midi.py` to generate them from your `.mid` files.  
+  See [NoteEM_tsv/README.md](NoteEM_tsv/README.md) for details on the TSV schema.
 
 ### Inference
 

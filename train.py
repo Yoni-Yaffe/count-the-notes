@@ -69,22 +69,23 @@ def parse_args():
         help="Path to transcriber checkpoint",
     )
     parser.add_argument(
-        "--dataset-name", type=str, default="em_dataset", help="Name of the dataset"
+        "--dataset-name", type=str, required=True, help="Name of the dataset"
     )
     parser.add_argument(
         "--tsv-dir", type=str, default="NoteEM_tsv", help="Path to TSV metadata files"
     )
-    parser.add_argument(
-        "--train-data-path",
-        type=str,
-        default=None,
-        help="Root path to training audio files",
-    )
+
     parser.add_argument(
         "--labels-dir-path",
         type=str,
-        default=None,
         help="Directory to save or load label files",
+    )
+
+    parser.add_argument(
+        "--data-dir-path",
+        type=str,
+        default="datasets",
+        help="Root path to training datasets directory",
     )
 
     # Optional features
@@ -102,7 +103,7 @@ def parse_args():
         "--n-weight", type=float, default=2.0, help="Weight for positive onset loss"
     )
     parser.add_argument(
-        "--groups", nargs="*", default=None, help="Group names for dataset split"
+        "--groups", nargs="+", help="Group names for dataset split"
     )
     parser.add_argument(
         "--make-evaluation", action="store_true", help="Keep evaluation file outputs"
@@ -135,8 +136,8 @@ def parse_args():
     parser.add_argument(
         "--counting-window",
         type=int,
-        default=1000,
-        help="Window size for label counting",
+        default=1875,
+        help="Window size for label counting. The units are in frames each frame is HOP_LENGTH / SAMPLE_RATE seconds. For example for the defaults of HOP_LENGTH=512 and SAMPLE_RATE=16000 the window size is 1000 frames = 1000 * 512 / 16000 seconds = 32 milliseconds. So window size of 1875 is 1 minute.",
     )
     parser.add_argument(
         "--update-labels",
@@ -160,7 +161,7 @@ def parse_args():
         "--counting-window-hop",
         type=int,
         default=0,
-        help="Hop size for counting window",
+        help="Hop size for counting window with hop size 0. We do no overlap",
     )
     parser.add_argument(
         "--no-save-updated-labels-midis",
@@ -246,12 +247,12 @@ def train(
     # n_weight = 1 if HOP_LENGTH == 512 else 2
     n_weight = config["n_weight"]
     dataset_name = config["dataset_name"]
+    
+    data_dir_path = config.get("data_dir_path", "datasets")
+    
+    train_data_path = os.path.join(data_dir_path, dataset_name, 'noteEM_audio')
 
-    train_data_path = config.get(
-        "train_data_path", f"datasets/{dataset_name}/noteEM_audio"
-    )
-
-    if "labels_dir_path" in config:
+    if config.get("labels_dir_path") is not None:
         labels_path = config["labels_dir_path"]
     else:
         labels_path = os.path.join(logdir, "NoteEm_labels")
@@ -268,7 +269,7 @@ def train(
             f"epochs: {epochs}, transcriber_ckpt: {transcriber_ckpt}, n_weight: {n_weight}\n"
         )
 
-    if "groups" in config:
+    if config.get("groups") is not None:
         train_groups = config["groups"]
     else:
         train_groups = [dataset_name]
@@ -572,6 +573,7 @@ def train_from_args(args):
     sequence_length = constants.SEQ_LEN
 
     logdir = args.logdir or f"logs/logdir-{datetime.now().strftime('%y%m%d-%H%M%S')}"
+    print(f"Log directory: {logdir}")
     os.makedirs(logdir, exist_ok=True)
 
     try:

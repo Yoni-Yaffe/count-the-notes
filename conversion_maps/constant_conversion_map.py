@@ -1,3 +1,3 @@
-from conversion_maps import classic_conversion_map
-from conversion_maps import pop_conversion_map
-conversion_map = {i: 0 for i in pop_conversion_map.conversion_map}
+from onsets_and_frames.constants import MAX_MIDI
+
+conversion_map = {i: 0 for i in range(MAX_MIDI + 1)}

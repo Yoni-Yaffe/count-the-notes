@@ -1,6 +1,6 @@
 # Datasets Directory
 
-This directory contains datasets used for training and evaluation. Each dataset should follow the structure below, organized by pitch-shifted versions.
+This directory contains datasets (audio files only) used for training and evaluation. Each dataset should follow the structure below, organized by pitch-shifted versions. The audio files are expected to be in flac format and sampled at the sample rate defined in onsets_and_frames/cosntants in the argument SAMPLE_RATE. The default is 16,000.
 
 ## Directory Structure
 
