@@ -73,7 +73,7 @@ class EMDATASET(Dataset):
         self.use_onset_mask = use_onset_mask
         self.pitch_shift_limit = pitch_shift_limit
 
-        self.logger.info("Save to memory is %s", self.save_to_memory)
+        self.logger.debug("Save to memory is %s", self.save_to_memory)
         self.logger.info("len file list %d", len(self.file_list))
         self.logger.info("\n\n")
 
@@ -117,11 +117,11 @@ class EMDATASET(Dataset):
     ):
         self.path = self.audio_path
         tsvs_path = self.tsv_path
-        print("tsv path", tsvs_path)
-        print("Evaluation list", evaluation_list)
+        self.logger.info("tsv path: %s", tsvs_path)
+        self.logger.info("Evaluation list: %s", evaluation_list)
         res = []
-        print("keep eval files", keep_eval_files)
-        print("n eval", n_eval)
+        self.logger.info("keep eval files: %s", keep_eval_files)
+        self.logger.info("n eval: %d", n_eval)
         for group in groups:
             tsvs = os.listdir(tsvs_path + os.sep + group)
             tsvs = sorted(tsvs)
@@ -141,7 +141,7 @@ class EMDATASET(Dataset):
                 tsvs = [i for i in tsvs if i not in eval_tsvs]
             else:
                 eval_tsvs = []
-            print("len tsvs: ", len(tsvs))
+            self.logger.info("len tsvs: %d", len(tsvs))
 
             tsvs_names = [t.split(".tsv")[0].split("#")[0] for t in tsvs]
             eval_tsvs_names = [t.split(".tsv")[0].split("#")[0] for t in eval_tsvs]
@@ -157,7 +157,8 @@ class EMDATASET(Dataset):
                     i for i in fls if i.split("#")[0] in tsvs_names
                 ]  # in case we dont have the corresponding midi
                 missing_fls = [i for i in orig_files if i not in fls]
-                print("missing files: ", missing_fls)
+                if len(missing_fls) > 0:
+                    self.logger.warning("missing files: %s", missing_fls)
                 fls_names = [i.split("#")[0].split(".flac")[0] for i in fls]
                 tsvs = [
                     i for i in tsvs if i.split(".tsv")[0].split("#")[0] in fls_names
@@ -202,10 +203,10 @@ class EMDATASET(Dataset):
                 os.path.basename(flac).split("#")[0].split(".flac")[0]
                 != os.path.basename(tsv).split("#")[0].split(".tsv")[0]
             ):
-                print("found mismatch in the files: ")
-                print(os.path.basename(flac).split("#")[0])
-                print(os.path.basename(tsv).split("#")[0])
-                print("please check the input files")
+                self.logger.warning("found mismatch in the files: ")
+                self.logger.warning("flac: %s", os.path.basename(flac).split("#")[0])
+                self.logger.warning("tsv: %s", os.path.basename(tsv).split("#")[0])
+                self.logger.warning("please check the input files")
                 exit(1)
         return res
 
@@ -232,8 +233,8 @@ class EMDATASET(Dataset):
         self.instruments = list(
             set(self.instruments) - set(range(88, 104)) - set(range(112, 150))
         )
-        print("Dataset instruments:", self.instruments)
-        print("Total:", len(self.instruments), "instruments")
+        self.logger.info("Dataset instruments: %s", self.instruments)
+        self.logger.info("Total: %d instruments", len(self.instruments))
 
     def add_instruments(self):
         for _, f in self.file_list:
@@ -363,7 +364,7 @@ class EMDATASET(Dataset):
 
     def load_pts(self, files):
         self.pts = {}
-        print("loading pts...")
+        self.logger.info("loading pts...")
         for flac, tsv in tqdm(files, desc="loading pts"):
             # print('flac, tsv', flac, tsv)
             if os.path.isfile(
@@ -379,14 +380,14 @@ class EMDATASET(Dataset):
                     )
             else:
                 if flac.count("#") != 2:
-                    print("two #", flac)
+                    self.logger.debug("two # in filename: %s", flac)
                 audio, sr = soundfile.read(flac, dtype="int16")
                 if len(audio.shape) == 2:
                     audio = audio.astype(float).mean(axis=1)
                 else:
                     audio = audio.astype(float)
                 audio = audio.astype(np.int16)
-                print("audio len", len(audio))
+                self.logger.debug("audio len: %d", len(audio))
                 assert sr == SAMPLE_RATE
                 audio = torch.ShortTensor(audio)
                 if "#0" not in flac:
@@ -495,7 +496,7 @@ class EMDATASET(Dataset):
                     audio_inp.reshape(-1, audio_inp.shape[-1])[:, :-1]
                 ).transpose(-1, -2)
                 onset_pred, offset_pred, _, frame_pred, _ = transcriber(mel)
-            self.logger.info("Done predicting.")
+            self.logger.debug("Done predicting.")
 
             # We assume onset predictions are of length N_KEYS * (len(instruments) + 1),
             # first N_KEYS classes are the first instrument, next N_KEYS classes are the next instrument, etc.,
@@ -505,7 +506,7 @@ class EMDATASET(Dataset):
             frame_pred = frame_pred.detach().squeeze().cpu()
 
             PEAK_SIZE = peak_size
-            self.logger.info("PEAK_SIZE: %d", PEAK_SIZE)
+            self.logger.debug("PEAK_SIZE: %d", PEAK_SIZE)
             # we peak peak the onset prediction to only keep local maximum onsets
             if peak_size > 0:
                 peaks = get_peaks(
@@ -529,7 +530,7 @@ class EMDATASET(Dataset):
             )
 
             bon_dist /= gt_bag_of_notes.sum()
-            self.logger.info("bag of notes dist: %f", bon_dist)
+            self.logger.debug("bag of notes dist: %f", bon_dist)
             ####
 
             aligned_onsets = np.zeros(onset_pred_np.shape, dtype=bool)
@@ -540,7 +541,7 @@ class EMDATASET(Dataset):
             # denote by K the number of times it occurs in the unaligned label. We simply take the K highest local
             # peaks predicted by the current model.
             # Split unaligned onsets into chunks of size counting_window_length
-            self.logger.info(
+            self.logger.debug(
                 "unaligned onsets shape: %s, counting window length: %d, counting window hop: %d",
                 unaligned_onsets.shape,
                 counting_window_length,
@@ -556,7 +557,7 @@ class EMDATASET(Dataset):
                 else int(np.ceil(len(unaligned_onsets) / counting_window_hop))
             )
 
-            self.logger.info("number of chunks: %d", num_chunks)
+            self.logger.debug("number of chunks: %d", num_chunks)
             start_time = time.time()
             for chunk_idx in range(num_chunks):
                 start_idx = chunk_idx * counting_window_hop
@@ -588,7 +589,7 @@ class EMDATASET(Dataset):
 
             counting_duration = time.time() - start_time
             total_counting_time += counting_duration
-            self.logger.info(
+            self.logger.debug(
                 "Counting alignment for file '%s' took %.2f seconds.",
                 flac,
                 counting_duration,
@@ -634,7 +635,7 @@ class EMDATASET(Dataset):
             prev_bon_dist_vec = data.get("BON_VEC", None)
             if update:
                 if BEST_DIST_VEC:
-                    self.logger.info("Updated Labels")
+                    self.logger.debug("Updated Labels")
                     if prev_bon_dist_vec is None:
                         raise ValueError(
                             "BEST_DIST_VEC is True but no previous BON_VEC found"
@@ -655,10 +656,10 @@ class EMDATASET(Dataset):
                                 updated_flag = True
                         if updated_flag:
                             update_count += 1
-                        self.logger.info("Updated %d pitches", num_pitches_updated)
+                        self.logger.debug("Updated %d pitches", num_pitches_updated)
                     data["label"] = prev_label
                     data["BON_VEC"] = prev_bon_dist_vec
-                    self.logger.info("saved updated pt")
+                    self.logger.debug("saved updated pt")
                     torch.save(
                         data,
                         self.labels_path
@@ -670,12 +671,12 @@ class EMDATASET(Dataset):
 
                 elif not BEST_DIST or bon_dist < prev_bon_dist:
                     update_count += 1
-                    self.logger.info("Updated Labels")
+                    self.logger.debug("Updated Labels")
 
                     data["label"] = torch.from_numpy(label).byte()
 
                     data["BON"] = bon_dist
-                    self.logger.info("saved updated pt")
+                    self.logger.debug("saved updated pt")
                     torch.save(
                         data,
                         self.labels_path
@@ -686,7 +687,7 @@ class EMDATASET(Dataset):
                     )
 
             if bon_dist < prev_bon_dist:
-                self.logger.info(
+                self.logger.debug(
                     "Bag of notes distance improved from %f to %f",
                     prev_bon_dist,
                     bon_dist,

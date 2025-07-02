@@ -24,6 +24,13 @@ import argparse
 import torch
 import json
 
+# Optional wandb import
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    WANDB_AVAILABLE = False
+WANDB_LOG_INTERVAL = 50  
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -187,6 +194,29 @@ def parse_args():
         default=0,
         help="Number of DataLoader workers (0 = main process)",
     )
+    
+    # Weights & Biases logging
+    parser.add_argument(
+        "--use-wandb", action="store_true", help="Enable Weights & Biases logging. Note that you will need to log in to Weights & Biases before running this script."
+    )
+    parser.add_argument(
+        "--wandb-project", 
+        type=str, 
+        default="music-transcription", 
+        help="Weights & Biases project name"
+    )
+    parser.add_argument(
+        "--wandb-entity", 
+        type=str, 
+        default=None, 
+        help="Weights & Biases entity/team name"
+    )
+    parser.add_argument(
+        "--wandb-run-name", 
+        type=str, 
+        default=None, 
+        help="Weights & Biases run name (auto-generated if not provided)"
+    )
 
     return parser.parse_args()
 
@@ -240,6 +270,8 @@ def train(
     loss_list = []
     iter_list = []
 
+    use_wandb = config.get("use_wandb", False)
+    
     if config.get("seed", None) is not None:
         seed = config["seed"]
         random.seed(seed)
@@ -490,6 +522,21 @@ def train(
                     {"instrument_mapping": dataset.instruments},
                     os.path.join(logdir, "instrument_mapping.pt"),
                 )
+                
+            if use_wandb and iteration % WANDB_LOG_INTERVAL == 1:
+                try:
+                    wandb.log({
+                        "iteration": iteration,
+                        "loss": curr_loss_value,
+                        "onset_precision": onset_precision,
+                        "onset_recall": onset_recall,
+                        "pitch_onset_precision": pitch_onset_precision,
+                        "pitch_onset_recall": pitch_onset_recall,
+                        "epoch": epoch
+                    })
+                except Exception as e:
+                    logger.warning("Failed to log to wandb: %s", str(e))
+                
 
             if epochs == 1 and iteration % 1000 == 1:
                 score_msg = (
@@ -498,6 +545,7 @@ def train(
                     f"Pitch Onset Recall  {pitch_onset_recall:.3f}\n"
                 )
                 logger.info(score_msg)
+                
                 loss_list.append(np.mean(curr_loss))
                 iter_list.append(iteration)
                 curr_loss = []
@@ -537,6 +585,21 @@ def train(
             pitch_onset_recall,
             time.strftime('%M:%S', time.gmtime(time_end - time_start))
         )
+        
+        # Log epoch-level metrics to wandb if enabled
+        if use_wandb:
+            try:
+                wandb.log({
+                    "epoch": epoch,
+                    "epoch_loss": sum(total_loss) / len(total_loss),
+                    "epoch_onset_precision": onset_precision,
+                    "epoch_onset_recall": onset_recall,
+                    "epoch_pitch_onset_precision": pitch_onset_precision,
+                    "epoch_pitch_onset_recall": pitch_onset_recall,
+                    "epoch_training_time_seconds": time_end - time_start
+                })
+            except Exception as e:
+                logger.warning("Failed to log epoch metrics to wandb: %s", str(e))
 
         save_condition = epoch % checkpoint_interval == 1 or checkpoint_interval == 1
         if save_condition and epochs != 1:
@@ -553,10 +616,25 @@ def train(
         logger.info(score_msg)
 
     total_run_2 = time.time()
+    total_runtime = total_run_2 - total_run_1
     logger.info(
         "Total Runtime: %s",
-        time.strftime('%H:%M:%S', time.gmtime(total_run_2 - total_run_1))
+        time.strftime('%H:%M:%S', time.gmtime(total_runtime))
     )
+    
+    # Log final metrics to wandb if enabled
+    if use_wandb:
+        try:
+            wandb.log({
+                "total_runtime_seconds": total_runtime,
+                "total_runtime_hours": total_runtime / 3600,
+                "final_loss": sum(total_loss) / len(total_loss) if total_loss else 0,
+                "training_completed": True
+            })
+            wandb.finish()
+            logger.info("Finished Weights & Biases logging")
+        except Exception as e:
+            logger.warning("Failed to finalize wandb logging: %s", str(e))
 
     # keep last optimized state
     torch.save(optimizer.state_dict(), os.path.join(logdir, "last-optimizer-state.pt"))
@@ -572,6 +650,26 @@ def train_from_args(args):
     # Initialize logging system once and get train logger
     _, _ = initialize_logging_system(logdir)  # Initialize the system
     logger = get_logger("train")  # Get the train logger
+
+    # Initialize wandb if requested
+    if args.use_wandb:
+        if not WANDB_AVAILABLE:
+            logger.warning("wandb not installed. Install with: pip install wandb")
+            args.use_wandb = False
+        else:
+            try:
+                run_name = args.wandb_run_name or f"run-{datetime.now().strftime('%y%m%d-%H%M%S')}"
+                wandb.init(
+                    project=args.wandb_project,
+                    entity=args.wandb_entity,
+                    name=run_name,
+                    config=vars(args),
+                    dir=logdir
+                )
+                logger.info("Initialized Weights & Biases logging")
+            except Exception as e:
+                logger.warning("Failed to initialize wandb: %s", str(e))
+                args.use_wandb = False
 
     config = vars(args)  # Convert Namespace to dict for easy access
     transcriber_ckpt = args.transcriber_ckpt
