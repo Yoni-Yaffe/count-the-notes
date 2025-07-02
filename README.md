@@ -119,7 +119,63 @@ python inference.py -h
 ```
 ---
 
+## Evaluation Script (`eval.py`)
 
+We provide a standalone evaluation utility to assess the accuracy of transcribed MIDI files against reference MIDI or TSV annotations using both **note-level** and **frame-level** metrics.
+
+This is useful for benchmarking transcribers outside the training pipeline — for example, comparing inference results from `inference.py` with ground truth.
+
+### Usage
+
+```bash
+python eval.py \
+  --transcribed-dir evaluation/midis_no_pitch_shift_transcribed \
+  --reference-dir evaluation/new_inference_dir/results \
+  --outfile results.txt \
+  --tolerance 0.05 \
+  --shift 0.0 \
+  --parallel \
+  --max-workers 8
+```
+
+### Arguments
+
+- `--transcribed-dir`:  
+  Path to a folder containing **transcribed** `.mid` or `.midi` files, typically produced by a model (e.g., via `inference.py`).  
+  Filenames must match or sort consistently with the reference files.
+
+- `--reference-dir`:  
+  Path to a folder with **reference MIDI or TSV files**.  
+  Supported formats:
+  - `.mid` or `.midi` — standard MIDI files
+  - `.tsv` — 5-column text files (`onset`, `offset`, `pitch`, `velocity`, `instrument`)  
+    Must be tab-delimited and compatible with `mir_eval`.
+
+- `--outfile`:  
+  Optional path to a `.txt` file where summary metrics will be saved.  
+  A CSV file with per-piece scores will also be generated alongside it.
+
+- `--tolerance`:  
+  Onset tolerance in seconds for matching (default: `0.05`).
+
+- `--shift`:  
+  Uniform time shift (in seconds) to apply to the reference labels.  
+  Useful when aligning outputs from different renderings.
+
+- `--parallel`:  
+  Use multiprocessing for faster evaluation over many files.
+
+- `--max-workers`:  
+  Number of CPU workers for parallel mode (default: `4`).
+
+### Input Format
+
+- The evaluation assumes that the transcribed and reference files match **by sorted filename order**.
+- If using `.tsv` files in the reference directory, you can generate them using:
+
+```bash
+python scripts/make_parsed_tsv_from_midi.py --input-dir your_midis --output-dir NoteEM_tsv/your_dataset
+```
 
 <!-- ## Credits & Citation
 
