@@ -5,11 +5,15 @@ from torch import nn
 class BiLSTM(nn.Module):
     inference_chunk_length = 512
 
-    def __init__(self, input_features, recurrent_features, use_gru=False, dropout=0.):
+    def __init__(self, input_features, recurrent_features, use_gru=False, dropout=0.0):
         super().__init__()
-        self.rnn = (nn.LSTM if not use_gru else nn.GRU)(input_features, recurrent_features,
-                                                        batch_first=True, bidirectional=True,
-                                                        dropout=dropout)
+        self.rnn = (nn.LSTM if not use_gru else nn.GRU)(
+            input_features,
+            recurrent_features,
+            batch_first=True,
+            bidirectional=True,
+            dropout=dropout,
+        )
 
     def forward(self, x):
         if self.training:
@@ -22,7 +26,12 @@ class BiLSTM(nn.Module):
 
             h = torch.zeros(num_directions, batch_size, hidden_size, device=x.device)
             c = torch.zeros(num_directions, batch_size, hidden_size, device=x.device)
-            output = torch.zeros(batch_size, sequence_length, num_directions * hidden_size, device=x.device)
+            output = torch.zeros(
+                batch_size,
+                sequence_length,
+                num_directions * hidden_size,
+                device=x.device,
+            )
 
             # forward direction
             slices = range(0, sequence_length, self.inference_chunk_length)
@@ -61,7 +70,12 @@ class UniLSTM(nn.Module):
 
             h = torch.zeros(num_directions, batch_size, hidden_size, device=x.device)
             c = torch.zeros(num_directions, batch_size, hidden_size, device=x.device)
-            output = torch.zeros(batch_size, sequence_length, num_directions * hidden_size, device=x.device)
+            output = torch.zeros(
+                batch_size,
+                sequence_length,
+                num_directions * hidden_size,
+                device=x.device,
+            )
 
             # forward direction
             slices = range(0, sequence_length, self.inference_chunk_length)

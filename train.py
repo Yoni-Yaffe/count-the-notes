@@ -4,7 +4,14 @@ import numpy as np
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from onsets_and_frames.constants import HOP_LENGTH, N_MELS, DEFAULT_DEVICE, MAX_MIDI, MIN_MIDI, N_KEYS
+from onsets_and_frames.constants import (
+    HOP_LENGTH,
+    N_MELS,
+    DEFAULT_DEVICE,
+    MAX_MIDI,
+    MIN_MIDI,
+    N_KEYS,
+)
 from onsets_and_frames.transcriber import OnsetsAndFrames, OnsetsNoFrames
 from onsets_and_frames.utils import cycle
 from onsets_and_frames import constants
@@ -105,9 +112,7 @@ def parse_args():
     parser.add_argument(
         "--n-weight", type=float, default=2.0, help="Weight for positive onset loss"
     )
-    parser.add_argument(
-        "--groups", nargs="+", help="Group names for dataset split"
-    )
+    parser.add_argument("--groups", nargs="+", help="Group names for dataset split")
     parser.add_argument(
         "--make-evaluation", action="store_true", help="Keep evaluation file outputs"
     )
@@ -246,10 +251,10 @@ def train(
     # n_weight = 1 if HOP_LENGTH == 512 else 2
     n_weight = config["n_weight"]
     dataset_name = config["dataset_name"]
-    
+
     data_dir_path = config.get("data_dir_path", "datasets")
-    
-    train_data_path = os.path.join(data_dir_path, dataset_name, 'noteEM_audio')
+
+    train_data_path = os.path.join(data_dir_path, dataset_name, "noteEM_audio")
 
     if config.get("labels_dir_path") is not None:
         labels_path = config["labels_dir_path"]
@@ -512,9 +517,7 @@ def train(
                 print(score_msg)
 
             if epochs == 1 and iteration % 2500 == 0:
-                transcriber_path = os.path.join(
-                    logdir, "transcriber_ckpt.pt"
-                )
+                transcriber_path = os.path.join(logdir, "transcriber_ckpt.pt")
                 if config.get("onset_no_frames_model", False):
                     prev_transcriber.onset_stack.load_state_dict(
                         transcriber.onset_stack.state_dict()

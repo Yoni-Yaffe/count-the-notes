@@ -2,8 +2,7 @@ import numpy as np
 import torch
 
 
-def extract_notes(onsets, frames, velocity,
-                  onset_threshold=0.5, frame_threshold=0.5):
+def extract_notes(onsets, frames, velocity, onset_threshold=0.5, frame_threshold=0.5):
     """
     Finds the note timings based on the onsets and frames information
 
@@ -48,7 +47,7 @@ def extract_notes(onsets, frames, velocity,
 
         while onsets[offset, pitch].item() or frames[offset, pitch].item():
             if onsets[offset, pitch].item():
-            # if frames[offset, pitch].item():
+                # if frames[offset, pitch].item():
                 velocity_samples.append(velocity[offset, pitch].item())
             offset += 1
             if offset == onsets.shape[0]:
@@ -57,7 +56,9 @@ def extract_notes(onsets, frames, velocity,
         if offset > onset:
             pitches.append(pitch)
             intervals.append([onset, offset])
-            velocities.append(np.mean(velocity_samples) if len(velocity_samples) > 0 else 0)
+            velocities.append(
+                np.mean(velocity_samples) if len(velocity_samples) > 0 else 0
+            )
 
     return np.array(pitches), np.array(intervals), np.array(velocities)
 
@@ -81,7 +82,7 @@ def notes_to_frames(pitches, intervals, shape, mask=None):
     for pitch, (onset, offset) in zip(pitches, intervals):
         # print('pitch', pitch, onset, offset)
         # print('onset offset', onset, offset, pitch)
-        roll[onset: offset, pitch] = 1
+        roll[onset:offset, pitch] = 1
     if mask is not None:
         roll *= mask
     time = np.arange(roll.shape[0])
