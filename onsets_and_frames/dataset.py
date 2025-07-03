@@ -465,7 +465,7 @@ class EMDATASET(Dataset):
             audio_inp_len = len(audio_inp)
             if audio_inp_len > MAX_TIME:
                 n_segments = int(np.ceil(audio_inp_len / MAX_TIME))
-                self.logger.info("Long audio, splitting to %d segments", n_segments)
+                self.logger.debug("Long audio, splitting to %d segments", n_segments)
                 seg_len = MAX_TIME
                 onsets_preds = []
                 offset_preds = []
