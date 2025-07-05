@@ -368,8 +368,9 @@ if __name__ == "__main__":
     ]
 
     if len(transcribed_midis) != len(reference_midis):
-        print("Error: The number of transcribed and reference files must match.")
-        exit(1)
+        raise ValueError(
+            f"The number of transcribed MIDI files does not match the number of reference MIDI/TSV files. Number of transcribed files: {len(transcribed_midis)}, Number of reference files: {len(reference_midis)}."
+        )
 
     if args.parallel:
         evaluate_parallel(

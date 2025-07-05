@@ -8,7 +8,8 @@ import torch
 from torch.nn import DataParallel
 
 from onsets_and_frames import constants
-from onsets_and_frames.constants import SAMPLE_RATE, melspectrogram
+from onsets_and_frames.constants import SAMPLE_RATE
+from onsets_and_frames.mel import melspectrogram
 from onsets_and_frames.midi_utils import frames2midi
 
 
