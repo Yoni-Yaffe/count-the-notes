@@ -64,10 +64,21 @@ The implementation is based on the following projects:
 
 > Requires **Python ≥3.8** and a GPU with CUDA 11+.
 
+We provide both pyproject.toml and requirements.txt
+
+You can use uv for installation:
+
+```bash
+# 1) Create virtual environment and install dependancies using UV
+uv sync
+```
+
+Or you install using pip.
+
 ```bash
 # 1) Create & activate a virtual‑env (recommended)
-python -m venv venv
-source venv/bin/activate        # (or venv\Scripts\activate on Windows)
+python -m venv .venv
+source .venv/bin/activate        # (or venv\Scripts\activate on Windows)
 
 # 2) Install dependencies
 pip install -r requirements.txt

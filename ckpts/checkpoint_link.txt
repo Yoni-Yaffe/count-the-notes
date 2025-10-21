@@ -1,2 +1,6 @@
 place checkpoints here. Checkpoints can be downloaded from:
+# Synth - A transcriber trained on Multi-Instrument synthetic data. This is used as the starting point for most of our paper's experiments. 
 https://drive.google.com/file/d/1c_bzYehE8ysDEtvGMdiidV7XmLQ1Unb1/view?usp=sharing
+
+# Musicnet - This transcriber was trained using the CountEM framework on the Musicnet dataset. This checkpoint is the "30s" line from table 4 in the paper. 
+https://drive.google.com/file/d/1NAoxj5zBJx8D4js0GhBlAdDwNobeUSGG/view?usp=sharing
