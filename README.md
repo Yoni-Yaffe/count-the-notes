@@ -89,7 +89,9 @@ pip install -r requirements.txt
 ## Bootstrap Checkpoint
 
 We do **not** ship large model weights.
-Instead, the folder `ckpts/` contains a small text file `checkpoint_link.txt` with a download link to a transcriber trained purely on synthetic MIDI renderings.
+Instead, the folder `ckpts/` contains a text file `checkpoint_link.txt` with a downloads link to 
+1) Transcriber trained purely on synthetic MIDI renderings.
+2) Transcriber trained using CountEM framework on the musicnet datast.
 
 
 ---
