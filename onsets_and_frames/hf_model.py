@@ -1,10 +1,8 @@
 """
 Hugging Face Hub-compatible wrapper for CountEM music transcription models.
 """
-import io
-import tempfile
 from pathlib import Path
-from typing import Optional, Union, Tuple
+from typing import Union, Tuple
 import numpy as np
 import torch
 import soundfile as sf
@@ -25,7 +23,16 @@ from onsets_and_frames.constants import (
 )
 
 
-class CountEMModel(OnsetsAndFrames, PyTorchModelHubMixin):
+class CountEMModel(
+    OnsetsAndFrames,
+    PyTorchModelHubMixin,
+    # Optional metadata that gets pushed to model card
+    library_name="countem",
+    tags=["audio", "music-transcription", "automatic-music-transcription", "midi"],
+    license="cc-by-4.0",
+    repo_url="https://github.com/Yoni-Yaffe/count-the-notes",
+    paper_url="https://arxiv.org/abs/2511.14250",
+):
     """
     Hugging Face Hub-compatible wrapper for CountEM automatic music transcription models.
 
@@ -122,9 +129,14 @@ class CountEMModel(OnsetsAndFrames, PyTorchModelHubMixin):
         # Add batch dimension if needed
         if audio.dim() == 1:
             audio = audio.unsqueeze(0)
-            
+
         device = next(self.parameters()).device
         audio = audio.to(device)
+
+        # Remove last sample (consistent with training code)
+        # This is done in dataset.py, transcriber.py, and inference.py
+        audio = audio[:, :-1]
+
         mel = self.melspectrogram(audio)
 
         # Transpose to (batch, time, features) format expected by parent model
@@ -160,9 +172,10 @@ class CountEMModel(OnsetsAndFrames, PyTorchModelHubMixin):
         if isinstance(audio, np.ndarray):
             audio = torch.from_numpy(audio).float()
 
-        # Ensure audio is 1D
+        # Ensure audio is 1D (convert stereo to mono if needed)
         if audio.dim() > 1:
-            audio = audio.squeeze()
+            # If stereo or multi-channel, take mean across channels
+            audio = audio.mean(dim=-1 if audio.shape[-1] <=2 else 0)
 
         # Normalize audio
         if audio.dtype == torch.int16:
@@ -350,20 +363,3 @@ class CountEMModel(OnsetsAndFrames, PyTorchModelHubMixin):
         model.load_state_dict(legacy_model.state_dict(), strict=False)
 
         return model
-
-    def _save_pretrained(self, save_directory: Path) -> None:
-        """
-        Save the model weights and config to a directory.
-        This is called by PyTorchModelHubMixin.
-        """
-        # Save the model state dict
-        model_path = save_directory / "model.safetensors"
-
-        # Use safetensors if available, otherwise use torch.save
-        try:
-            from safetensors.torch import save_file
-            save_file(self.state_dict(), str(model_path))
-        except ImportError:
-            # Fallback to pytorch format
-            model_path = save_directory / "pytorch_model.bin"
-            torch.save(self.state_dict(), model_path)
