@@ -4,7 +4,7 @@ Hugging Face Hub-compatible wrapper for CountEM music transcription models.
 import io
 import tempfile
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Optional, Union, Tuple
 import numpy as np
 import torch
 import soundfile as sf
@@ -142,6 +142,9 @@ class CountEMModel(OnsetsAndFrames, PyTorchModelHubMixin):
         """
         Transcribe audio to note predictions.
 
+        Automatically handles long audio by splitting into segments (max 5 minutes each)
+        to avoid memory issues.
+
         Args:
             audio: Audio waveform, shape (n_samples,), normalized to [-1, 1]
             onset_threshold: Threshold for onset detection (default: 0.5)
@@ -153,8 +156,61 @@ class CountEMModel(OnsetsAndFrames, PyTorchModelHubMixin):
         """
         self.eval()
 
-        # Forward pass (automatically converts audio to mel internally)
-        onset_pred, offset_pred, activation_pred, frame_pred, velocity_pred = self(audio)
+        # Convert to torch tensor if needed
+        if isinstance(audio, np.ndarray):
+            audio = torch.from_numpy(audio).float()
+
+        # Ensure audio is 1D
+        if audio.dim() > 1:
+            audio = audio.squeeze()
+
+        # Normalize audio
+        if audio.dtype == torch.int16:
+            audio = audio.float() / 32768.0
+        elif audio.max() > 1.0 or audio.min() < -1.0:
+            audio = audio / max(abs(audio.max()), abs(audio.min()))
+
+        device = next(self.parameters()).device
+        audio = audio.to(device)
+
+        # Handle long audio by segmenting
+        MAX_TIME = 5 * 60 * SAMPLE_RATE  # 5 minutes
+        audio_len = len(audio)
+
+        if audio_len > MAX_TIME:
+            # Split into segments
+            n_segments = int(np.ceil(audio_len / MAX_TIME))
+            seg_len = MAX_TIME
+
+            onset_preds = []
+            offset_preds = []
+            activation_preds = []
+            frame_preds = []
+            velocity_preds = []
+
+            for i_s in range(n_segments):
+                start = i_s * seg_len
+                end = min((i_s + 1) * seg_len, audio_len)
+                segment = audio[start:end]
+
+                # Forward pass on segment
+                onset_seg, offset_seg, activation_seg, frame_seg, velocity_seg = self(segment)
+
+                onset_preds.append(onset_seg)
+                offset_preds.append(offset_seg)
+                activation_preds.append(activation_seg)
+                frame_preds.append(frame_seg)
+                velocity_preds.append(velocity_seg)
+
+            # Concatenate along time dimension (dim=1)
+            onset_pred = torch.cat(onset_preds, dim=1)
+            offset_pred = torch.cat(offset_preds, dim=1)
+            activation_pred = torch.cat(activation_preds, dim=1)
+            frame_pred = torch.cat(frame_preds, dim=1)
+            velocity_pred = torch.cat(velocity_preds, dim=1)
+        else:
+            # Short audio, process directly
+            onset_pred, offset_pred, activation_pred, frame_pred, velocity_pred = self(audio)
 
         # Convert to numpy and remove batch dimension
         onset_pred = onset_pred.squeeze(0).cpu().numpy()
