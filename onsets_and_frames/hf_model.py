@@ -133,8 +133,7 @@ class CountEMModel(
         device = next(self.parameters()).device
         audio = audio.to(device)
 
-        # Remove last sample (consistent with training code)
-        # This is done in dataset.py, transcriber.py, and inference.py
+        # Remove last sample to fix frame count mismatch
         audio = audio[:, :-1]
 
         mel = self.melspectrogram(audio)
