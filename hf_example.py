@@ -77,6 +77,9 @@ def main():
     print(f"Loading audio: {audio_path}")
     try:
         audio, sr = sf.read(str(audio_path), dtype="float32")
+        # Convert stereo to mono if necessary
+        if len(audio.shape) == 2:
+            audio = audio.mean(axis=1)
     except Exception as e:
         print(f"Error loading audio file: {e}")
         sys.exit(1)

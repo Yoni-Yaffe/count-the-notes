@@ -100,7 +100,7 @@ We provide two pre-trained models on Hugging Face Hub for easy use without train
 # Install with Hugging Face Hub support
 pip install huggingface_hub
 
-# Or install all dependencies including gradio for the demo
+# Or install all dependencies
 pip install -r requirements.txt
 ```
 
@@ -138,16 +138,6 @@ See [hf_example.py](hf_example.py) for a complete command-line example:
 ```bash
 python hf_example.py input_audio.flac output.mid --model Yoni232/countem-musicnet
 ```
-
-### Gradio Demo
-
-Try the interactive web demo:
-
-```bash
-python app.py
-```
-
-This launches a local web interface where you can upload audio files and download MIDI transcriptions.
 
 ---
 ## Bootstrap Checkpoint
