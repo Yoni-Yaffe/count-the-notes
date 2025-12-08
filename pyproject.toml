@@ -19,4 +19,6 @@ dependencies = [
     "torch==2.0.1",
     "tqdm>=4.28.1",
     "wandb>=0.15.0",
+    "safetensors>=0.4.3",
+    "huggingface_hub>=0.20.0",
 ]

@@ -13,3 +13,5 @@ einops==0.6.1
 torch==2.0.1
 PyYAML==6.0
 wandb>=0.15.0
+safetensors>=0.4.3
+huggingface_hub>=0.20.0

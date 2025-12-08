@@ -86,6 +86,70 @@ pip install -r requirements.txt
 ```
 
 ---
+
+## Using Pre-trained Models from Hugging Face Hub
+
+We provide two pre-trained models on Hugging Face Hub for easy use without training:
+
+1. **[countem-synth](https://huggingface.co/Yoni232/countem-synth)** - Transcriber trained on synthetic MIDI renderings
+2. **[countem-musicnet](https://huggingface.co/Yoni232/countem-musicnet)** - Transcriber trained with CountEM framework on MusicNet dataset
+
+### Quick Start with Hugging Face Models
+
+```bash
+# Install with Hugging Face Hub support
+pip install huggingface_hub
+
+# Or install all dependencies including gradio for the demo
+pip install -r requirements.txt
+```
+
+### Basic Usage
+
+```python
+from onsets_and_frames.hf_model import CountEMModel
+import soundfile as sf
+
+# Load model from Hugging Face Hub (downloads automatically on first use)
+model = CountEMModel.from_pretrained("Yoni232/countem-musicnet")
+
+# Load your audio file (must be 16kHz)
+audio, sr = sf.read("your_audio.flac", dtype="float32")
+assert sr == 16000, f"Audio must be 16kHz, got {sr}Hz"
+
+# Transcribe to MIDI
+model.transcribe_to_midi(audio, "output.mid")
+```
+
+**Important:** Audio must be sampled at 16kHz. You can resample using `ffmpeg` or `librosa`:
+```bash
+# Using ffmpeg
+ffmpeg -i input.wav -ar 16000 output_16k.flac
+
+# Using librosa in Python
+import librosa
+audio, sr = librosa.load("input.wav", sr=16000)
+```
+
+### Example Script
+
+See [hf_example.py](hf_example.py) for a complete command-line example:
+
+```bash
+python hf_example.py input_audio.flac output.mid --model Yoni232/countem-musicnet
+```
+
+### Gradio Demo
+
+Try the interactive web demo:
+
+```bash
+python app.py
+```
+
+This launches a local web interface where you can upload audio files and download MIDI transcriptions.
+
+---
 ## Bootstrap Checkpoint
 
 We do **not** ship large model weights.
